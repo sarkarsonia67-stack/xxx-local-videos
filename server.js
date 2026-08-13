@@ -58,7 +58,20 @@ if (!db.prepare("SELECT id FROM users WHERE email=?").get(adminEmail)) {
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
 app.use(express.static(path.join(ROOT, "public")));
-app.use("/uploads", express.static(UPLOAD_DIR, {maxAge:"1h"}));
+app.use("/uploads", express.static(UPLOAD_DIR, {maxAge:"1h"
+ })
+ );
+app.get("/", (req, res) => {
+  const indexFile = path.join(ROOT, "public", "index.html");
+
+  if (!fs.existsSync(indexFile)) {
+    return res.status(404).send(
+      "index.html not found. Make sure public/index.html exists."
+    );
+  }
+
+  res.sendFile(indexFile);
+});
 app.use(session({
   secret: process.env.SESSION_SECRET || "replace-this-secret-in-production",
   resave:false,
