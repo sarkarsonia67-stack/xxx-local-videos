@@ -1,142 +1,21 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>18+ Video Platform</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
-
-<body>
-
-<nav>
-  <a class="brand" href="/">18+ Video</a>
-  <div class="navlinks">
-    <a href="/">Home</a>
-    <a href="/upload.html">Upload</a>
-    <a href="/login.html">Login</a>
-    <a href="/register.html">Register</a>
-  </div>
-</nav>
-
-<main>
-
-<section class="hero">
-  <h1>18+ Video Platform</h1>
-  <p>Age-gated user uploaded video platform.</p>
-
-  <form id="searchForm">
-    <input id="search" placeholder="Search videos...">
-    <button type="submit">Search</button>
-  </form>
-</section>
-
-<h2>Latest Videos</h2>
-
-<div id="videos">
-  Loading videos...
-</div>
-
-</main>
-
-<footer>
-  18+ age-gated platform • Respect consent, rights and local law.
-</footer>
-
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fetcher</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080c14;color:#f7f8fc;font-family:Arial,sans-serif}.top{position:sticky;top:0;background:#0d1320ee;backdrop-filter:blur(12px);padding:14px;z-index:5;border-bottom:1px solid #222c3b}.bar{max-width:1100px;margin:auto;display:flex;gap:10px;align-items:center}.logo{font-size:23px;font-weight:800}.logo b{color:#36d7ff}.search{flex:1;display:flex;background:#151d2b;border:1px solid #293449;border-radius:12px}.search input{flex:1;background:none;border:0;color:white;padding:12px;outline:0}.search button{background:none;color:white;border:0;padding:0 15px}.main{max-width:1100px;margin:auto;padding:18px;padding-bottom:90px}.hero,.panel,.card{background:#111925;border:1px solid #253044;border-radius:18px}.hero{padding:24px;margin-bottom:15px;background:linear-gradient(135deg,#172342,#111925)}h1{margin:0 0 8px}.muted{color:#8e9bad}.btn{border:0;border-radius:10px;padding:11px 15px;background:#6c63ff;color:white;font-weight:700}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.thumb{aspect-ratio:16/9;background:#182231;position:relative;overflow:hidden}.thumb video{width:100%;height:100%;object-fit:cover}.play{position:absolute;inset:0;display:grid;place-items:center;font-size:35px;background:#0003}.meta{padding:11px}.stats{color:#8793a6;font-size:12px;margin-top:6px}.tags{color:#5cbcff;font-size:12px;margin-top:5px}.ad{border:1px dashed #3a465a;border-radius:13px;min-height:80px;display:grid;place-items:center;color:#68758a;margin:15px 0}.bottom{position:fixed;bottom:0;left:0;right:0;background:#0c121d;border-top:1px solid #273145;display:flex;justify-content:center;z-index:10}.nav{width:min(700px,100%);display:flex;justify-content:space-around}.nav button{background:none;border:0;color:#8d98a9;padding:10px}.nav button.active{color:white}.nav span{display:block;font-size:20px}.nav small{font-size:10px}.modal{position:fixed;inset:0;background:#000c;display:none;place-items:center;padding:15px;z-index:20}.modal.show{display:grid}.modalbox{width:min(750px,100%);max-height:92vh;overflow:auto;background:#111925;border:1px solid #334056;border-radius:18px;padding:18px}.modal video{width:100%;max-height:65vh;background:#000}.close{float:right;background:#283347;color:white;border:0;border-radius:8px;padding:7px}.form{max-width:560px;margin:20px auto;padding:20px}.form input,.form textarea{width:100%;margin:6px 0 12px;padding:12px;border-radius:10px;border:1px solid #2d394c;background:#0b111a;color:white}.form textarea{min-height:100px}.toast{position:fixed;right:15px;top:75px;background:#182334;padding:12px 15px;border-radius:10px;display:none;z-index:30}@media(max-width:600px){.grid{gap:8px}.hero{padding:18px}}
+</style></head><body>
+<header class="top"><div class="bar"><div class="logo">Fetch<b>er</b></div><div class="search"><input id="q" placeholder="Search title or #hashtag"><button onclick="search()">⌕</button></div><button class="btn" onclick="location.href='/admin'">Admin</button></div></header>
+<main class="main"><section class="hero"><h1>Watch. Upload. Fetch.</h1><p class="muted">Discover videos and share your content.</p><button class="btn" onclick="upload()">＋ Upload video</button></section>
+<div class="ad">Banner Ad Placement</div><h2>All Videos</h2><div id="grid" class="grid"></div></main>
+<nav class="bottom"><div class="nav"><button class="active"><span>⌂</span><small>Home</small></button><button onclick="upload()"><span>＋</span><small>Upload</small></button><button onclick="login()"><span>◎</span><small>Login</small></button><button onclick="location.href='/admin'"><span>⚙</span><small>Admin</small></button></div></nav>
+<div id="modal" class="modal"><div class="modalbox"><button class="close" onclick="modal.classList.remove('show')">✕</button><div id="watch"></div></div></div><div id="toast" class="toast"></div>
 <script>
-async function loadVideos(q = "") {
-  const box = document.getElementById("videos");
-
-  try {
-    const res = await fetch(
-      "/api/videos?q=" + encodeURIComponent(q)
-    );
-
-    const videos = await res.json();
-
-    if (!videos.length) {
-      box.innerHTML = "<p>No approved videos available.</p>";
-      return;
-    }
-
-    box.innerHTML = videos.map(v => `
-      <div class="card">
-
-        <video
-          controls
-          preload="metadata"
-          src="/uploads/${encodeURIComponent(v.filename)}"
-          style="width:100%;max-height:300px;border-radius:12px">
-        </video>
-
-        <h3>${escapeHTML(v.title)}</h3>
-
-        <p>${escapeHTML(v.description || "")}</p>
-
-        <p>
-          #${escapeHTML(v.category)}
-          • ${Number(v.views).toLocaleString()} views
-        </p>
-
-        <a href="/watch/${v.id}">
-          <button>Watch Video</button>
-        </a>
-
-        <button onclick="shareVideo(${v.id}, '${escapeJS(v.title)}')">
-          Share
-        </button>
-
-      </div>
-    `).join("");
-
-  } catch (err) {
-    box.innerHTML = "<p>Could not load videos.</p>";
-  }
-}
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
-  }[c]));
-}
-
-function escapeJS(value) {
-  return String(value ?? "")
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'");
-}
-
-async function shareVideo(id, title) {
-  const url = location.origin + "/watch/" + id;
-
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: title,
-        text: "Watch this video",
-        url: url
-      });
-    } catch (e) {}
-  } else {
-    await navigator.clipboard.writeText(url);
-    alert("Video link copied!");
-  }
-}
-
-document.getElementById("searchForm").addEventListener(
-  "submit",
-  function(e) {
-    e.preventDefault();
-    loadVideos(document.getElementById("search").value);
-  }
-);
-
-loadVideos();
-</script>
-
-</body>
-</html>
+let videos=JSON.parse(localStorage.getItem("fx_videos")||"[]");
+function save(){localStorage.setItem("fx_videos",JSON.stringify(videos))}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function render(list=videos.filter(v=>v.status==="approved")){let x=document.getElementById("grid");x.innerHTML=list.map(v=>`<article class="card" onclick="watch('${v.id}')"><div class="thumb"><video src="${v.src}" muted preload="metadata"></video><div class="play">▶</div></div><div class="meta"><b>${esc(v.title)}</b><div class="stats">${v.views} views · ${v.likes} likes</div><div class="tags">${esc(v.tags)}</div></div></article>`).join("")||'<p class="muted">No approved videos yet.</p>'}
+function search(){let q=document.getElementById("q").value.toLowerCase();render(videos.filter(v=>v.status==="approved"&&(v.title+" "+v.tags+" "+v.description).toLowerCase().includes(q)))}
+function watch(id){let v=videos.find(x=>x.id===id);v.views++;save();document.getElementById("watch").innerHTML=`<video src="${v.src}" controls autoplay></video><h2>${esc(v.title)}</h2><p class="muted">${v.views} views · ${v.likes} likes · ${esc(v.userName)}</p><button class="btn" onclick="like('${v.id}')">♥ Like (${v.likes})</button><p>${esc(v.description)}</p><p class="tags">${esc(v.tags)}</p><hr><h3>Comments</h3><div>${(v.comments||[]).map(c=>`<p><b>${esc(c.name)}</b>: ${esc(c.text)}</p>`).join("")||'<span class="muted">No comments.</span>'}</div>`;modal.classList.add("show")}
+function like(id){let v=videos.find(x=>x.id===id);v.likes++;save();watch(id)}
+function login(){document.getElementById("toast").textContent="Use Upload/login flow from the full Firebase build.";document.getElementById("toast").style.display="block";setTimeout(()=>toast.style.display="none",2200)}
+function upload(){document.getElementById("toast").textContent="Upload form is available in the full app build.";document.getElementById("toast").style.display="block";setTimeout(()=>toast.style.display="none",2200)}
+render();
+</script></body></html>
