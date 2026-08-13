@@ -190,4 +190,6 @@ app.get("/watch/:id",(req,res)=>{
   res.send(page(v.title,`<div class="watch"><video controls playsinline preload="metadata" src="/uploads/${encodeURIComponent(v.filename)}"></video><h1>${esc(v.title)}</h1><p>${esc(v.description)}</p><p>${esc(v.category)} • ${v.views+1} views • Uploaded by ${esc(v.uploader)}</p>${user()?`<form id="reportForm" class="card"><h3>Report</h3><input name="reason" placeholder="Reason" required><button>Submit report</button></form>`:""}</div><script>document.getElementById('reportForm')?.addEventListener('submit',async e=>{e.preventDefault();const r=await fetch('/api/videos/${v.id}/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:e.target.reason.value})});alert((await r.json()).ok?'Report submitted.':'Could not submit report.');});</script>`));
 });
 
-app.listen(PORT,()=>console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
