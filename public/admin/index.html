@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fetcher Admin</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070b12;color:#f6f8fb;font-family:Arial}.wrap{max-width:1200px;margin:auto;padding:20px}.login,.panel,.stat,.table{background:#111925;border:1px solid #29354a;border-radius:16px}.login{max-width:430px;margin:12vh auto;padding:25px}.login input,.settings input,.settings textarea{width:100%;padding:12px;margin:7px 0 12px;background:#0b111a;color:white;border:1px solid #2d394c;border-radius:10px}.btn{padding:10px 14px;border:0;border-radius:9px;background:#6c63ff;color:white;font-weight:700}.danger{background:#8e2746}.ok{background:#167b58}.head{display:flex;justify-content:space-between;align-items:center;gap:10px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.stat{padding:18px}.stat b{font-size:25px}.table{overflow:auto;margin:18px 0}table{width:100%;border-collapse:collapse;min-width:800px}th,td{padding:12px;border-bottom:1px solid #29354a;text-align:left;font-size:13px}.pill{padding:5px 8px;border-radius:20px;font-size:11px}.pending{background:#4a3b13;color:#f5d36a}.approved{background:#103c2d;color:#6ee7b7}.rejected{background:#481c2b;color:#ff91aa}.settings{padding:18px;margin-top:18px}.settings textarea{min-height:100px}@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><div class="wrap">
+<div id="login" class="login"><h1>Fetcher Admin</h1><p>Secure admin dashboard</p><input id="pass" type="password" placeholder="Admin password"><button class="btn" style="width:100%" onclick="doLogin()">Login</button></div>
+<div id="app" style="display:none"><div class="head"><h1>Admin Dashboard</h1><div><button class="btn" onclick="location.href='/'">Website</button> <button class="btn danger" onclick="logout()">Logout</button></div></div>
+<div class="stats"><div class="stat">Users<br><b id="users">0</b></div><div class="stat">Pending videos<br><b id="pending">0</b></div><div class="stat">Total views<br><b id="views">0</b></div><div class="stat">Total earning<br><b id="earn">₹0</b></div></div>
+<h2>Video Publish Requests</h2><div class="table"><table><thead><tr><th>User</th><th>Video</th><th>Views</th><th>Status</th><th>Action</th></tr></thead><tbody id="videos"></tbody></table></div>
+<h2>User Bank Verification</h2><div class="table"><table><thead><tr><th>User</th><th>Account</th><th>IFSC</th><th>Status</th><th>Action</th></tr></thead><tbody id="banks"></tbody></table></div>
+<h2>User Earnings</h2><div class="table"><table><thead><tr><th>User</th><th>30 Days Views</th><th>Earning</th><th>Transfer</th></tr></thead><tbody id="earning"></tbody></table></div>
+<div class="settings"><h2>Ads Settings</h2><textarea id="ads" placeholder="Approved ad network code / placement"></textarea><button class="btn" onclick="saveAds()">Save Ads</button><h2>Change Admin Password</h2><input id="newpass" type="password" placeholder="New password"><button class="btn" onclick="changePass()">Change Password</button></div>
+</div></div>
+<script>
+const DEFAULT="850931@";let adminPass=localStorage.getItem("fx_admin_pass")||DEFAULT;
+let videos=JSON.parse(localStorage.getItem("fx_videos")||"[]"),users=JSON.parse(localStorage.getItem("fx_users")||"[]"),banks=JSON.parse(localStorage.getItem("fx_banks")||"[]");
+function save(){localStorage.setItem("fx_videos",JSON.stringify(videos));localStorage.setItem("fx_users",JSON.stringify(users));localStorage.setItem("fx_banks",JSON.stringify(banks))}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function doLogin(){if(pass.value!==adminPass)return alert("Wrong password");sessionStorage.setItem("fx_admin","1");open()}
+function open(){if(sessionStorage.getItem("fx_admin")!=="1")return;login.style.display="none";app.style.display="block";render()}
+function logout(){sessionStorage.removeItem("fx_admin");location.reload()}
+function render(){users.textContent=users.length;pending.textContent=videos.filter(v=>v.status==="pending").length;views.textContent=videos.reduce((a,v)=>a+Number(v.views||0),0);earn.textContent="₹"+videos.reduce((a,v)=>a+Number(v.earning||0),0).toFixed(2);
+document.getElementById("videos").innerHTML=videos.map(v=>`<tr><td>${esc(v.userName)}</td><td>${esc(v.title)}</td><td>${v.views}</td><td><span class="pill ${v.status}">${v.status}</span></td><td>${v.status==="pending"?`<button class="btn ok" onclick="actVideo('${v.id}','approved')">Approve</button> <button class="btn danger" onclick="actVideo('${v.id}','rejected')">Reject</button>`:"—"}</td></tr>`).join("")||"<tr><td colspan=5>No requests</td></tr>";
+document.getElementById("banks").innerHTML=banks.map(b=>`<tr><td>${esc(b.userName)}</td><td>${esc(b.account)}</td><td>${esc(b.ifsc)}</td><td><span class="pill ${b.status}">${b.status}</span></td><td>${b.status==="pending"?`<button class="btn ok" onclick="actBank('${b.userId}','approved')">Approve</button> <button class="btn danger" onclick="actBank('${b.userId}','rejected')">Reject</button>`:"—"}</td></tr>`).join("")||"<tr><td colspan=5>No bank requests</td></tr>";
+let us=[...users];document.getElementById("earning").innerHTML=us.map(u=>{let vs=videos.filter(v=>v.userId===u.id),vw=vs.reduce((a,v)=>a+v.views,0),er=vs.reduce((a,v)=>a+Number(v.earning||0),0);return `<tr><td>${esc(u.name)}</td><td>${vw}</td><td>₹${er.toFixed(2)}</td><td><button class="btn" onclick="alert('Transfer request recorded for '+${JSON.stringify(u.name)})">Transfer</button></td></tr>`}).join("")||"<tr><td colspan=4>No users</td></tr>";
+ads.value=localStorage.getItem("fx_ads")||""}
+function actVideo(id,s){let v=videos.find(x=>x.id===id);if(v){v.status=s;save();render()}}
+function actBank(id,s){let b=banks.find(x=>x.userId===id);if(b){b.status=s;save();render()}}
+function saveAds(){localStorage.setItem("fx_ads",ads.value);alert("Ads settings saved")}
+function changePass(){if(newpass.value.length<6)return alert("Minimum 6 characters");adminPass=newpass.value;localStorage.setItem("fx_admin_pass",adminPass);newpass.value="";alert("Admin password changed")}
+open();
+</script></body></html>
