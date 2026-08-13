@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>18+ Video Platform</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<nav>
+  <a class="brand" href="/">18+ Video</a>
+  <div class="navlinks">
+    <a href="/">Home</a>
+    <a href="/upload.html">Upload</a>
+    <a href="/login.html">Login</a>
+    <a href="/register.html">Register</a>
+  </div>
+</nav>
+
+<main>
+
+<section class="hero">
+  <h1>18+ Video Platform</h1>
+  <p>Age-gated user uploaded video platform.</p>
+
+  <form id="searchForm">
+    <input id="search" placeholder="Search videos...">
+    <button type="submit">Search</button>
+  </form>
+</section>
+
+<h2>Latest Videos</h2>
+
+<div id="videos">
+  Loading videos...
+</div>
+
+</main>
+
+<footer>
+  18+ age-gated platform • Respect consent, rights and local law.
+</footer>
+
+<script>
+async function loadVideos(q = "") {
+  const box = document.getElementById("videos");
+
+  try {
+    const res = await fetch(
+      "/api/videos?q=" + encodeURIComponent(q)
+    );
+
+    const videos = await res.json();
+
+    if (!videos.length) {
+      box.innerHTML = "<p>No approved videos available.</p>";
+      return;
+    }
+
+    box.innerHTML = videos.map(v => `
+      <div class="card">
+
+        <video
+          controls
+          preload="metadata"
+          src="/uploads/${encodeURIComponent(v.filename)}"
+          style="width:100%;max-height:300px;border-radius:12px">
+        </video>
+
+        <h3>${escapeHTML(v.title)}</h3>
+
+        <p>${escapeHTML(v.description || "")}</p>
+
+        <p>
+          #${escapeHTML(v.category)}
+          • ${Number(v.views).toLocaleString()} views
+        </p>
+
+        <a href="/watch/${v.id}">
+          <button>Watch Video</button>
+        </a>
+
+        <button onclick="shareVideo(${v.id}, '${escapeJS(v.title)}')">
+          Share
+        </button>
+
+      </div>
+    `).join("");
+
+  } catch (err) {
+    box.innerHTML = "<p>Could not load videos.</p>";
+  }
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[c]));
+}
+
+function escapeJS(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'");
+}
+
+async function shareVideo(id, title) {
+  const url = location.origin + "/watch/" + id;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: title,
+        text: "Watch this video",
+        url: url
+      });
+    } catch (e) {}
+  } else {
+    await navigator.clipboard.writeText(url);
+    alert("Video link copied!");
+  }
+}
+
+document.getElementById("searchForm").addEventListener(
+  "submit",
+  function(e) {
+    e.preventDefault();
+    loadVideos(document.getElementById("search").value);
+  }
+);
+
+loadVideos();
+</script>
+
+</body>
+</html>
